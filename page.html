@@ -61,13 +61,23 @@
             },
             data() {
                 return {
-                    decimalPlaces: 0,
+                  decimalPlaces: 0,
+                  dateFormat: 'd/MM/Y'
                 }
             },
             components: {
               LineChart
             },
             computed: {
+                years() {
+                  // todo generate this from the results
+                  return [
+                    2018,
+                    2017,
+                    2016
+                  ]
+                },
+
                 hasResults() {
                     return Object.keys(this.results).length > 0;
                 },
@@ -85,6 +95,7 @@
                         if(this.rawData.hasOwnProperty(key)){
                             let result = {
                               games: this.rawData[key],
+                              date: moment(key, "DD/MM/YYYY"),
                             };
 
                             result.series = this.series(result.games);
@@ -96,24 +107,34 @@
 
                     return ordered;
                 },
-                chartSeries(){
-                  let series = [];
-
-                  for(let games of Object.values(this.results)){
-                    series.push(games.series);
-                  }
-
-                  return {
-                    labels: Object.keys(this.results),
-                    datasets: [{
-                      label: "Series",
-                      backgroundColor: '#0e00f8',
-                      data: series
-                    }]
-                  };
-                }
             },
             methods: {
+              chartSeries(year = null){
+                let series = [];
+                let labels = [];
+
+                for(let games of Object.values(this.results)){
+                  if(year){
+                    if(games.date.year() === year){
+                      series.push(games.series);
+                      labels.push(games.date.format(this.dateFormat));
+                    }
+                  } else {
+                    series.push(games.series);
+                    labels.push(games.date.format(this.dateFormat));
+                  }
+                }
+
+                return {
+                  labels,
+                  datasets: [{
+                    label: year ? `Series for ${year}` : "All Series",
+                    backgroundColor: '#ed7774',
+                    data: series
+                  }]
+                };
+              },
+
                 runningAverage(seriesAverage, index){
                     let data = Object.keys(this.results).splice(0, index+1);
                     let total = 0;
@@ -153,9 +174,7 @@
                                     <tbody>
                                         <tr v-for="data, date, index in results">
                                             <td v-text="date"></td>
-                                            <td v-text="data.games[0]"></td>
-                                            <td v-text="data.games[1]"></td>
-                                            <td v-text="data.games[2]"></td>
+                                            <td v-text="game" v-for="game in data.games"></td>
                                             <td v-text="data.average"></td>
                                             <td v-text="runningAverage(data.series, index)"></td>
                                         </tr>
@@ -166,9 +185,27 @@
 
                     </div>
                     <div class="col-md-6">
-                        <span>Top game</span>
 
-                        <line-chart :line-data="chartSeries"></line-chart>
+                        <div role="tabpanel">
+
+                          <ul class="nav nav-tabs nav-justified" role="tablist">
+                              <li role="presentation" class="active"><a href="#all" role="tab" data-toggle="tab" aria-expanded="true">All</a></li>
+                              <li role="presentation" v-for="year in years"><a :href="'#year-'+year" role="tab" data-toggle="tab" aria-expanded="false" v-text="year"></a></li>
+                          </ul>
+
+
+                          <div class="tab-content" v-if="hasResults">
+                              <div role="tabpanel" class="tab-pane active" id="all">
+                                <line-chart :line-data="chartSeries()"></line-chart>
+                              </div>
+
+                              <div role="tabpanel" class="tab-pane" v-for="year in years" :id="'year-'+year">
+                                <line-chart :line-data="chartSeries(year)"></line-chart>
+                              </div>
+                          </div>
+
+                        </div>
+
                     </div>
                 </div>
             `
