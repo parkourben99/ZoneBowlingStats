@@ -135,7 +135,36 @@
                 };
               },
 
-                runningAverage(seriesAverage, index){
+                runningAverageText(index) {
+                  let lastRunningAverage = this.runningAverage(index-1);
+                  let currentRunningAverage = this.runningAverage(index);
+
+                  if(index-1 < 0){
+                    lastRunningAverage = currentRunningAverage;
+                  }
+
+                  let diff = currentRunningAverage - lastRunningAverage;
+                  let diffCssClass = 'default';
+
+                  if(diff > 0){
+                    diffCssClass = 'success'
+                  } else if(diff < 0){
+                    diffCssClass = 'danger'
+                  }
+
+                  diff = diff > 0 ? '+'+diff : diff;
+                  let averageChange = `<span class="text-${diffCssClass}">${diff}</span>`;
+
+                  let returnResult = currentRunningAverage;
+
+                  if(diff !== 0){
+                    returnResult += ` ${averageChange}`;
+                  }
+
+                  return returnResult;
+                },
+
+                runningAverage(index){
                     let data = Object.keys(this.results).splice(0, index+1);
                     let total = 0;
                     let count = data.length;
@@ -145,10 +174,8 @@
                             total += this.results[date].series;
                         }
                     }
-                    
-                    let runningAverage = (total / (count*3)).toFixed(this.decimalPlaces);
 
-                    return `${runningAverage} (${seriesAverage})`;
+                    return (total / (count*3)).toFixed(this.decimalPlaces);
                 },
                 series(games){
                     return parseInt(games[0]) + parseInt(games[1]) + parseInt(games[2]);
@@ -164,19 +191,23 @@
                                     <thead>
                                         <tr>
                                             <th>Date</th>
-                                            <th>Game 1</th>
-                                            <th>Game 2</th>
-                                            <th>Game 3</th>
+                                            <th>Games</th>
                                             <th>Series</th>
                                             <th>Average</th>
+                                            <th>Running Average</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr v-for="data, date, index in results">
                                             <td v-text="date"></td>
-                                            <td v-text="game" v-for="game in data.games"></td>
+
+                                            <td>
+                                                <span v-text="game+' '" v-for="game in data.games"></span>
+                                            </td>
+
+                                            <td v-text="data.series"></td>
                                             <td v-text="data.average"></td>
-                                            <td v-text="runningAverage(data.series, index)"></td>
+                                            <td v-html="runningAverageText(index)"></td>
                                         </tr>
                                     </tbody>
                                 </table>
