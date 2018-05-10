@@ -13,12 +13,105 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     </head>
     <body>
-        <div class='container'>
-            <div class='row'>
-                <div id='app'>
-                    <result-set :raw-data="results"></result-set>
+        <div id='app'>
+            <bowling inline-template :raw-data="results">
+
+                <div class="row">
+                    <div role="tabpanel">
+
+                        <ul class="nav nav-tabs nav-justified" role="tablist">
+                            <li role="presentation" class="active">
+                                <a href="#all" role="tab" data-toggle="tab" aria-expanded="true">All</a>
+                            </li>
+                            <li role="presentation" v-for="data, year in years">
+                                <a :href="'#year-'+year" role="tab" data-toggle="tab" aria-expanded="false" v-text="year"></a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" v-if="hasResults">
+
+                            <div role="tabpanel" class="tab-pane active" id="all">
+                                <div class="row">
+                                    <div class="col-md-6">
+
+                                        <div class="panel panel-default">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Games</th>
+                                                        <th>Series</th>
+                                                        <th>Average</th>
+                                                        <th>Running Average</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="data, date, index in results">
+                                                        <td v-text="date"></td>
+
+                                                        <td>
+                                                            <span v-text="game+' '" v-for="game in data.games"></span>
+                                                        </td>
+
+                                                        <td v-text="data.series"></td>
+                                                        <td v-text="data.average"></td>
+                                                        <td v-html="runningAverageText(index)"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                    </div>
+                                    <div class="col-md-6">
+                                        <line-chart :line-data="chartSeries()"></line-chart>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div role="tabpanel" class="tab-pane" v-for="data, year in years" :id="'year-'+year">
+                                <div class="row">
+
+                                    <div class="col-md-6">
+                                        <div class="panel panel-default">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Games</th>
+                                                        <th>Series</th>
+                                                        <th>Average</th>
+                                                        <th>Running Average</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="data, date, index in years[year]">
+                                                        <td v-text="date"></td>
+
+                                                        <td>
+                                                            <span v-text="game+' '" v-for="game in data.games"></span>
+                                                        </td>
+
+                                                        <td v-text="data.series"></td>
+                                                        <td v-text="data.average"></td>
+                                                        <td v-html="runningAverageText(index)"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <line-chart :line-data="chartSeries(year)"></line-chart>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
                 </div>
-            </div>
+            </bowling>
         </div>
     </body>
 
@@ -36,233 +129,183 @@
     <script src="https://unpkg.com/vue-chartjs/dist/vue-chartjs.min.js"></script>
  
     <script>
-        window.json = {"30/10/2017": ["137", "156", "203"], "10/07/2017": ["167", "184", "169"], "08/05/2017": ["166", "176", "146"], "09/04/2018": ["184", "214", "203"], "13/02/2017": ["201", "213", "160"], "22/01/2018": ["162", "166", "147"], "11/07/2016": ["142", "143", "186"], "17/07/2017": ["142", "150", "147"], "29/08/2016": ["156", "172", "155"], "16/04/2018": ["139", "131", "132"], "07/08/2017": ["156", "103", "161"], "01/05/2017": ["172", "137", "122"], "5/09/2016": ["129", "148", "169"], "10/10/2016": ["173", "161", "181"], "1/08/2016": ["126", "102", "163"], "30/01/2017": ["106", "132", "229"], "22/08/2016": ["149", "157", "159"], "06/02/2017": ["146", "167", "146"], "14/08/2017": ["187", "206", "168"], "27/02/2017": ["158", "173", "144"], "19/09/2016": ["169", "150", "149"], "16/01/2017": ["121", "177", "146"], "12/09/2016": ["173", "155", "168"], "21/08/2017": ["161", "235", "138"], "20/03/2017": ["133", "161", "131"], "15/05/2017": ["150", "102", "161"], "09/10/2017": ["136", "170", "172"], "05/02/2018": ["226", "177", "161"], "26/09/2016": ["213", "210", "184"], "23/10/2017": ["142", "175", "228"], "05/03/2018": ["211", "178", "189"], "03/04/2017": ["151", "175", "156"], "28/08/2017": ["129", "178", "176"], "11/09/2017": ["171", "182", "139"], "23/01/2017": ["195", "137", "180"], "22/05/2017": ["152", "151", "101"], "06/03/2017": ["154", "135", "127"], "6/02/2017": ["146", "167", "146"], "18/09/2017": ["175", "133", "163"], "27/03/2017": ["191", "119", "184"], "31/07/2017": ["132", "163", "161"], "13/11/2017": ["191", "246", "174"], "14/11/2016": ["140", "160", "208"], "12/02/2018": ["189", "137", "139"], "24/10/2016": ["181", "163", "140"], "26/03/2018": ["119", "157", "170"], "16/10/2017": ["176", "156", "167"], "17/10/2016": ["147", "213", "183"], "24/04/2017": ["131", "133", "135"], "25/09/2017": ["235", "167", "173"], "06/11/2017": ["149", "179", "168"], "26/06/2017": ["154", "213", "144"], "18/07/2016": ["144", "100", "154"], "4/07/2016": ["122", "175", "174"], "20/02/2017": ["216", "166", "197"], "29/01/2018": ["200", "184", "138"], "23/04/2018": ["170", "179", "209"], "30/04/2018": ["179", "173", "131"], "25/07/2016": ["155", "156", "118"], "8/08/2016": ["147", "138", "142"], "26/02/2018": ["191", "151", "221"], "15/08/2016": ["143", "141", "170"], "03/07/2017": ["145", "119", "149"], "21/11/2016": ["190", "137", "159"], "19/02/2018": ["175", "175", "137"], "15/01/2018": ["178", "164", "136"], "19/03/2018": ["148", "157", "124"], "24/07/2017": ["186", "162", "149"], "04/09/2017": ["134", "173", "144"], "10/04/2017": ["166", "189", "132"], "7/11/2016": ["161", "126", "213"], "31/10/2016": ["159", "188", "181"]};
+      window.json = {"30/10/2017": ["137", "156", "203"], "10/07/2017": ["167", "184", "169"], "08/05/2017": ["166", "176", "146"], "09/04/2018": ["184", "214", "203"], "13/02/2017": ["201", "213", "160"], "22/01/2018": ["162", "166", "147"], "11/07/2016": ["142", "143", "186"], "17/07/2017": ["142", "150", "147"], "29/08/2016": ["156", "172", "155"], "16/04/2018": ["139", "131", "132"], "07/08/2017": ["156", "103", "161"], "01/05/2017": ["172", "137", "122"], "5/09/2016": ["129", "148", "169"], "10/10/2016": ["173", "161", "181"], "1/08/2016": ["126", "102", "163"], "30/01/2017": ["106", "132", "229"], "22/08/2016": ["149", "157", "159"], "06/02/2017": ["146", "167", "146"], "14/08/2017": ["187", "206", "168"], "27/02/2017": ["158", "173", "144"], "19/09/2016": ["169", "150", "149"], "16/01/2017": ["121", "177", "146"], "12/09/2016": ["173", "155", "168"], "21/08/2017": ["161", "235", "138"], "20/03/2017": ["133", "161", "131"], "15/05/2017": ["150", "102", "161"], "09/10/2017": ["136", "170", "172"], "05/02/2018": ["226", "177", "161"], "26/09/2016": ["213", "210", "184"], "23/10/2017": ["142", "175", "228"], "05/03/2018": ["211", "178", "189"], "03/04/2017": ["151", "175", "156"], "28/08/2017": ["129", "178", "176"], "11/09/2017": ["171", "182", "139"], "23/01/2017": ["195", "137", "180"], "22/05/2017": ["152", "151", "101"], "06/03/2017": ["154", "135", "127"], "6/02/2017": ["146", "167", "146"], "18/09/2017": ["175", "133", "163"], "27/03/2017": ["191", "119", "184"], "31/07/2017": ["132", "163", "161"], "13/11/2017": ["191", "246", "174"], "14/11/2016": ["140", "160", "208"], "12/02/2018": ["189", "137", "139"], "24/10/2016": ["181", "163", "140"], "26/03/2018": ["119", "157", "170"], "16/10/2017": ["176", "156", "167"], "17/10/2016": ["147", "213", "183"], "24/04/2017": ["131", "133", "135"], "25/09/2017": ["235", "167", "173"], "06/11/2017": ["149", "179", "168"], "26/06/2017": ["154", "213", "144"], "18/07/2016": ["144", "100", "154"], "4/07/2016": ["122", "175", "174"], "20/02/2017": ["216", "166", "197"], "29/01/2018": ["200", "184", "138"], "23/04/2018": ["170", "179", "209"], "30/04/2018": ["179", "173", "131"], "25/07/2016": ["155", "156", "118"], "8/08/2016": ["147", "138", "142"], "26/02/2018": ["191", "151", "221"], "15/08/2016": ["143", "141", "170"], "03/07/2017": ["145", "119", "149"], "21/11/2016": ["190", "137", "159"], "19/02/2018": ["175", "175", "137"], "15/01/2018": ["178", "164", "136"], "19/03/2018": ["148", "157", "124"], "24/07/2017": ["186", "162", "149"], "04/09/2017": ["134", "173", "144"], "10/04/2017": ["166", "189", "132"], "7/11/2016": ["161", "126", "213"], "31/10/2016": ["159", "188", "181"]};
 
-        const LineChart = {
-            name: 'LineChart',
-            extends: VueChartJs.Line,
-            props: {
-              lineData: null,
-            },
-            mounted () {
-              console.log(this.lineData);
-              this.renderChart({
-                labels: this.lineData.labels,
-                datasets: this.lineData.datasets
+      const LineChart = {
+        name: 'LineChart',
+        extends: VueChartJs.Line,
+        props: {
+          lineData: null,
+        },
+        mounted () {
+          console.log(this.lineData);
+          this.renderChart({
+            labels: this.lineData.labels,
+            datasets: this.lineData.datasets
 
-              }, {responsive: true, maintainAspectRatio: false})
+          }, {responsive: true, maintainAspectRatio: false})
+        }
+      };
+
+      const Bowling = {
+        name: 'BowlingResults',
+        props: {
+          rawData: {}
+        },
+        data() {
+          return {
+            decimalPlaces: 0,
+            dateFormat: 'd/MM/Y'
+          }
+        },
+        components: {
+          LineChart
+        },
+        computed: {
+          years() {
+            let years = {};
+
+            for(let key of Object.keys(this.results)){
+              let game = this.results[key];
+              let gameYear = game.date.year();
+
+              if(!years.hasOwnProperty(gameYear)){
+                years[gameYear] = {};
+              }
+
+              years[gameYear][this.results[key]] = game;
             }
-        };
 
-        const ResultSet = {
-            name: 'Results',
-            props: {
-                rawData: {}
-            },
-            data() {
-                return {
-                  decimalPlaces: 0,
-                  dateFormat: 'd/MM/Y'
-                }
-            },
-            components: {
-              LineChart
-            },
-            computed: {
-                years() {
-                  // todo generate this from the results
-                  return [
-                    2018,
-                    2017,
-                    2016
-                  ]
-                },
+            return years;
+          },
 
-                hasResults() {
-                    return Object.keys(this.results).length > 0;
-                },
-                results() {
-                    const ordered = {};
+          hasResults() {
+            return Object.keys(this.results).length > 0;
+          },
 
-                    const keys = Object.keys(this.rawData).sort((a,b) => {
-                        let c = moment(a, "DD/MM/YYYY");
-                        let d = moment(b, "DD/MM/YYYY");
+          results() {
+            const ordered = {};
 
-                        return c - d;
-                    });
+            const keys = Object.keys(this.rawData).sort((a,b) => {
+              let c = moment(a, "DD/MM/YYYY");
+              let d = moment(b, "DD/MM/YYYY");
 
-                    for(let key of keys){
-                        if(this.rawData.hasOwnProperty(key)){
-                            let result = {
-                              games: this.rawData[key],
-                              date: moment(key, "DD/MM/YYYY"),
-                            };
+              return c - d;
+            });
 
-                            result.series = this.series(result.games);
-                            result.average = (result.series / 3).toFixed(this.decimalPlaces);
-
-                            ordered[key] = result;
-                        }
-                    }
-
-                    return ordered;
-                },
-            },
-            methods: {
-              chartSeries(year = null){
-                let series = [];
-                let labels = [];
-
-                for(let games of Object.values(this.results)){
-                  if(year){
-                    if(games.date.year() === year){
-                      series.push(games.series);
-                      labels.push(games.date.format(this.dateFormat));
-                    }
-                  } else {
-                    series.push(games.series);
-                    labels.push(games.date.format(this.dateFormat));
-                  }
-                }
-
-                return {
-                  labels,
-                  datasets: [{
-                    label: year ? `Series for ${year}` : "All Series",
-                    backgroundColor: '#ed7774',
-                    data: series
-                  }]
+            for(let key of keys){
+              if(this.rawData.hasOwnProperty(key)){
+                let result = {
+                  games: this.rawData[key],
+                  date: moment(key, "DD/MM/YYYY"),
                 };
-              },
 
-                runningAverageText(index) {
-                  let lastRunningAverage = this.runningAverage(index-1);
-                  let currentRunningAverage = this.runningAverage(index);
+                result.series = this.series(result.games);
+                result.average = (result.series / 3).toFixed(this.decimalPlaces);
 
-                  if(index-1 < 0){
-                    lastRunningAverage = currentRunningAverage;
-                  }
-
-                  let diff = currentRunningAverage - lastRunningAverage;
-                  let diffCssClass = 'default';
-
-                  if(diff > 0){
-                    diffCssClass = 'success'
-                  } else if(diff < 0){
-                    diffCssClass = 'danger'
-                  }
-
-                  diff = diff > 0 ? '+'+diff : diff;
-                  let averageChange = `<span class="text-${diffCssClass}">${diff}</span>`;
-
-                  let returnResult = currentRunningAverage;
-
-                  if(diff !== 0){
-                    returnResult += ` ${averageChange}`;
-                  }
-
-                  return returnResult;
-                },
-
-                runningAverage(index){
-                    let data = Object.keys(this.results).splice(0, index+1);
-                    let total = 0;
-                    let count = data.length;
-
-                    for(let date of data){
-                        if(this.results.hasOwnProperty(date)){
-                            total += this.results[date].series;
-                        }
-                    }
-
-                    return (total / (count*3)).toFixed(this.decimalPlaces);
-                },
-                series(games){
-                    return parseInt(games[0]) + parseInt(games[1]) + parseInt(games[2]);
-                }
-            },
-            template: `
-                <div class="row">
-                    <div class="col-md-6">
-
-                        <div class="panel panel-default">
-                            <div v-if="hasResults">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Games</th>
-                                            <th>Series</th>
-                                            <th>Average</th>
-                                            <th>Running Average</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="data, date, index in results">
-                                            <td v-text="date"></td>
-
-                                            <td>
-                                                <span v-text="game+' '" v-for="game in data.games"></span>
-                                            </td>
-
-                                            <td v-text="data.series"></td>
-                                            <td v-text="data.average"></td>
-                                            <td v-html="runningAverageText(index)"></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                    </div>
-                    <div class="col-md-6">
-
-                        <div role="tabpanel">
-
-                          <ul class="nav nav-tabs nav-justified" role="tablist">
-                              <li role="presentation" class="active"><a href="#all" role="tab" data-toggle="tab" aria-expanded="true">All</a></li>
-                              <li role="presentation" v-for="year in years"><a :href="'#year-'+year" role="tab" data-toggle="tab" aria-expanded="false" v-text="year"></a></li>
-                          </ul>
-
-
-                          <div class="tab-content" v-if="hasResults">
-                              <div role="tabpanel" class="tab-pane active" id="all">
-                                <line-chart :line-data="chartSeries()"></line-chart>
-                              </div>
-
-                              <div role="tabpanel" class="tab-pane" v-for="year in years" :id="'year-'+year">
-                                <line-chart :line-data="chartSeries(year)"></line-chart>
-                              </div>
-                          </div>
-
-                        </div>
-
-                    </div>
-                </div>
-            `
-        };
-
-        const vm = new Vue({
-            'el': '#app',
-            'name': 'Bowling Results',
-            data() {
-                return {
-                    'loading': false,
-                    'results': [],
-                }
-            },
-            components: {
-                ResultSet,
-            },
-            mounted(){
-                this.getData();
-            },
-            methods: {
-                getData() {
-                    this.loading = true;
-                    this.results = window.json;
-                }
+                ordered[key] = result;
+              }
             }
-        });
+
+            return ordered;
+          },
+        },
+        methods: {
+          chartSeries(year = null){
+            let series = [];
+            let labels = [];
+
+            for(let games of Object.values(this.results)){
+              if(year){
+                if(games.date.year() === year){
+                  series.push(games.series);
+                  labels.push(games.date.format(this.dateFormat));
+                }
+              } else {
+                series.push(games.series);
+                labels.push(games.date.format(this.dateFormat));
+              }
+            }
+
+            return {
+              labels,
+              datasets: [{
+                label: year ? `Series for ${year}` : "All Series",
+                backgroundColor: '#ed7774',
+                data: series
+              }]
+            };
+          },
+
+          runningAverageText(index) {
+            let lastRunningAverage = this.runningAverage(index-1);
+            let currentRunningAverage = this.runningAverage(index);
+
+            if(index-1 < 0){
+              lastRunningAverage = currentRunningAverage;
+            }
+
+            let diff = currentRunningAverage - lastRunningAverage;
+            let diffCssClass = 'default';
+
+            if(diff > 0){
+              diffCssClass = 'success'
+            } else if(diff < 0){
+              diffCssClass = 'danger'
+            }
+
+            diff = diff > 0 ? '+'+diff : diff;
+            let averageChange = `<span class="text-${diffCssClass}">${diff}</span>`;
+
+            let returnResult = currentRunningAverage;
+
+            if(diff !== 0){
+              returnResult += ` ${averageChange}`;
+            }
+
+            return returnResult;
+          },
+
+          runningAverage(index){
+            let data = Object.keys(this.results).splice(0, index+1);
+            let total = 0;
+            let count = data.length;
+
+            for(let date of data){
+              if(this.results.hasOwnProperty(date)){
+                total += this.results[date].series;
+              }
+            }
+
+            return (total / (count*3)).toFixed(this.decimalPlaces);
+          },
+          series(games){
+            return parseInt(games[0]) + parseInt(games[1]) + parseInt(games[2]);
+          }
+        },
+      };
+
+      const vm = new Vue({
+        'el': '#app',
+        'name': 'Bowling',
+        data() {
+          return {
+            'loading': false,
+            'results': [],
+          }
+        },
+        components: {
+          Bowling,
+        },
+        mounted(){
+          this.getData();
+        },
+        methods: {
+          getData() {
+            // this.loading = true;
+            this.results = window.json;
+          }
+        }
+      });
     </script>
 </html>
