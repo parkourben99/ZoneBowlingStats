@@ -11,6 +11,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <style>
+            .padding-top-10 {
+                padding-top: 10px;
+            }
+        </style>
     </head>
     <body>
         <div id='app' class="container">
@@ -20,15 +25,15 @@
                     <div role="tabpanel">
 
                         <ul class="nav nav-tabs nav-justified" role="tablist">
-                            <li role="presentation" class="active">
-                                <a href="#all" role="tab" data-toggle="tab" aria-expanded="true">All</a>
-                            </li>
                             <li role="presentation" v-for="data, year in years">
                                 <a :href="'#year-'+year" role="tab" data-toggle="tab" aria-expanded="false" v-text="year"></a>
                             </li>
+                            <li role="presentation" class="active">
+                                <a href="#all" role="tab" data-toggle="tab" aria-expanded="true">All</a>
+                            </li>
                         </ul>
 
-                        <div class="tab-content" v-if="hasResults">
+                        <div class="tab-content padding-top-10" v-if="hasResults">
 
                             <div role="tabpanel" class="tab-pane active" id="all">
                                 <div class="row">
@@ -63,6 +68,28 @@
 
                                     </div>
                                     <div class="col-md-6">
+
+                                        <div class="row">
+
+                                            <div class="col-md-6">
+                                                <ul class="list-group">
+                                                    <li class="list-group-item" v-for="stat in stats()">
+                                                        <strong v-text="stat.title"></strong>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <ul class="list-group">
+                                                    <li class="list-group-item" v-for="stat in stats()">
+                                                        <span v-text="stat.content"></span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                        </div>
+
+
                                         <line-chart :chart-data="chartSeries()" :options="chartOptions"></line-chart>
                                     </div>
 
@@ -101,6 +128,27 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6">
+
+                                        <div class="row">
+
+                                            <div class="col-md-6">
+                                                <ul class="list-group">
+                                                    <li class="list-group-item" v-for="stat in stats(year)">
+                                                        <strong v-text="stat.title"></strong>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <ul class="list-group">
+                                                    <li class="list-group-item" v-for="stat in stats(year)">
+                                                        <span v-text="stat.content"></span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                        </div>
+
                                         <line-chart :chart-data="chartSeries(year)" :options="chartOptions"></line-chart>
                                     </div>
 
@@ -218,6 +266,17 @@
                 data: series
               }]
             };
+          },
+
+          stats(year = null){
+            let results = [];
+
+            results.push({
+              title: 'Higest game',
+              content: '100'
+            });
+
+            return results;
           },
 
           runningAverageText(index) {
