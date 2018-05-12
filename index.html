@@ -122,7 +122,7 @@
 
                                                         <td v-text="data.series"></td>
                                                         <td v-text="data.average"></td>
-                                                        <td v-html="runningAverageText(index)"></td>
+                                                        <td v-html="runningAverageText(index, year)"></td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -184,7 +184,7 @@
       const LineChart = {
         name: 'LineChart',
         extends: VueChartJs.Line,
-        // mixins: [VueChartJs.mixins.reactiveProp],
+        mixins: [VueChartJs.mixins.reactiveProp],
         props: ['chartData', 'options'],
         mounted () {
           console.log(this.chartData);
@@ -278,6 +278,9 @@
               'getLowestSeries',
               'getHighestGame',
               'getHighestSeries',
+              'getCurrentAverage',
+              'getGamesPlayed',
+              'getTotalPins',
 
               'getGamesOver:200',
               'getGamesOver:250',
@@ -293,7 +296,7 @@
               if(array.length === 1){
                 results.push(this[method](year));
               } else {
-                let result = this[array[0]](year, array[1]);
+                let result = this[array[0]](year, parseInt(array[1]));
 
                 if(result){
                   results.push(result);
@@ -303,6 +306,16 @@
             }
 
             return results;
+          },
+
+          getCurrentAverage(year = null){
+            let pins = this.getTotalPins(year).result;
+            let games = this.getGamesPlayed(year).result;
+
+            return {
+              title: 'Average',
+              result: (pins / games).toFixed(0),
+            }
           },
 
           getGamesOver(year = null, target) {
@@ -340,6 +353,34 @@
             return {
               title: `Series over ${target}`,
               result: count,
+            }
+          },
+
+          getGamesPlayed(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 0;
+
+            for(let week of Object.values(results)){
+              runningScore += 3;
+            }
+
+            return {
+              title: 'Total games played',
+              result: runningScore
+            }
+          },
+
+          getTotalPins(year = null) {
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 0;
+
+            for(let week of Object.values(results)){
+              runningScore += week.series;
+            }
+
+            return {
+              title: 'Total pins',
+              result: runningScore
             }
           },
 
@@ -423,9 +464,9 @@
             }
           },
 
-          runningAverageText(index) {
-            let lastRunningAverage = this.runningAverage(index-1);
-            let currentRunningAverage = this.runningAverage(index);
+          runningAverageText(index, year = null) {
+            let lastRunningAverage = this.runningAverage(index-1, year);
+            let currentRunningAverage = this.runningAverage(index, year);
 
             if(index-1 < 0){
               lastRunningAverage = currentRunningAverage;
@@ -452,14 +493,15 @@
             return returnResult;
           },
 
-          runningAverage(index){
-            let data = Object.keys(this.results).splice(0, index+1);
+          runningAverage(index, year = null){
+            let results = year ? this.years[year] : this.results;
+            let data = Object.keys(results).splice(0, index+1);
             let total = 0;
             let count = data.length;
 
             for(let date of data){
-              if(this.results.hasOwnProperty(date)){
-                total += this.results[date].series;
+              if(results.hasOwnProperty(date)){
+                total += results[date].series;
               }
             }
 
