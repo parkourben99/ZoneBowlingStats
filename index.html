@@ -82,7 +82,8 @@
                                             <div class="col-md-6">
                                                 <ul class="list-group">
                                                     <li class="list-group-item" v-for="stat in stats()">
-                                                        <span v-text="stat.content"></span>
+                                                        <strong v-text="stat.result"></strong>
+                                                        <span class="pull-right" v-text="stat.date"></span>
                                                     </li>
                                                 </ul>
                                             </div>
@@ -142,7 +143,8 @@
                                             <div class="col-md-6">
                                                 <ul class="list-group">
                                                     <li class="list-group-item" v-for="stat in stats(year)">
-                                                        <span v-text="stat.content"></span>
+                                                        <strong v-text="stat.result"></strong>
+                                                        <span class="pull-right" v-text="stat.date"></span>
                                                     </li>
                                                 </ul>
                                             </div>
@@ -182,7 +184,7 @@
       const LineChart = {
         name: 'LineChart',
         extends: VueChartJs.Line,
-        mixins: [VueChartJs.mixins.reactiveProp],
+        // mixins: [VueChartJs.mixins.reactiveProp],
         props: ['chartData', 'options'],
         mounted () {
           console.log(this.chartData);
@@ -209,7 +211,7 @@
         data() {
           return {
             decimalPlaces: 0,
-            dateFormat: 'd/MM/Y'
+            dateFormat: 'D/MM/Y'
           }
         },
         components: {
@@ -248,7 +250,7 @@
 
             for(let games of Object.values(this.results)){
               if(year){
-                if(games.date.year() === year){
+                if(games.date.year() === parseInt(year)){
                   series.push(games.series);
                   labels.push(games.date.format(this.dateFormat));
                 }
@@ -271,12 +273,154 @@
           stats(year = null){
             let results = [];
 
-            results.push({
-              title: 'Higest game',
-              content: '100'
-            });
+            const methods = [
+              'getLowestGame',
+              'getLowestSeries',
+              'getHighestGame',
+              'getHighestSeries',
+
+              'getGamesOver:200',
+              'getGamesOver:250',
+              'getSeriesOver:500',
+              'getSeriesOver:600',
+              'getSeriesOver:700',
+            ];
+
+            for(let method of methods) {
+
+              let array = method.split(':');
+
+              if(array.length === 1){
+                results.push(this[method](year));
+              } else {
+                let result = this[array[0]](year, array[1]);
+
+                if(result){
+                  results.push(result);
+                }
+              }
+
+            }
 
             return results;
+          },
+
+          getGamesOver(year = null, target) {
+            let results = year ? this.years[year] : this.results;
+            let count = 0;
+
+            for(let week of Object.values(results)){
+              for(let game of week.games){
+                if(game >= target){
+                  count++;
+                }
+              }
+            }
+
+            if(count === 0) return null;
+
+            return {
+              title: `Games over ${target}`,
+              result: count,
+            }
+          },
+
+          getSeriesOver(year = null, target) {
+            let results = year ? this.years[year] : this.results;
+            let count = 0;
+
+            for(let week of Object.values(results)){
+              if(week.series >= target){
+                count++;
+              }
+            }
+
+            if(count === 0) return null;
+
+            return {
+              title: `Series over ${target}`,
+              result: count,
+            }
+          },
+
+          getLowestGame(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningLowScore = 301;
+            let when = '';
+
+            for(let week of Object.values(results)){
+              for(let game of week.games){
+                if(game < runningLowScore){
+                  runningLowScore = game;
+                  when = week;
+                }
+              }
+            }
+
+            return {
+              title: 'Lowest game',
+              result: runningLowScore,
+              date: when.date.format(this.dateFormat),
+            }
+          },
+
+          getHighestGame(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 0;
+            let when = '';
+
+            for(let week of Object.values(results)){
+              for(let game of week.games){
+                if(game > runningScore){
+                  runningScore = game;
+                  when = week;
+                }
+              }
+            }
+
+            return {
+              title: 'Highest game',
+              result: runningScore,
+              date: when.date.format(this.dateFormat),
+            }
+          },
+
+          getHighestSeries(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 0;
+            let when = '';
+
+            for(let week of Object.values(results)){
+              if(week.series > runningScore){
+                runningScore = week.series;
+                when = week;
+              }
+            }
+
+            return {
+              title: 'Highest series',
+              result: runningScore,
+              date: when.date.format(this.dateFormat),
+            }
+          },
+
+          getLowestSeries(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 901;
+            let when = '';
+
+            for(let week of Object.values(results)){
+              if(week.series < runningScore){
+                runningScore = week.series;
+                when = week;
+              }
+            }
+
+            return {
+              title: 'Lowest series',
+              result: runningScore,
+              date: when.date.format(this.dateFormat),
+            }
           },
 
           runningAverageText(index) {
@@ -347,7 +491,11 @@
           },
 
           series(games){
-            return parseInt(games[0]) + parseInt(games[1]) + parseInt(games[2]);
+            return games[0] + games[1] + games[2];
+          },
+
+          games(games){
+            return [parseInt(games[0]), parseInt(games[1]), parseInt(games[2])];
           },
 
           sortResults(results) {
@@ -363,12 +511,12 @@
             for(let key of keys){
               if(results.hasOwnProperty(key)){
                 let result = {
-                  games: results[key],
+                  games: this.games(results[key]),
                   date: moment(key, "DD/MM/YYYY"),
                 };
 
                 result.series = this.series(result.games);
-                result.average = (result.series / 3).toFixed(0);
+                result.average = parseInt((result.series / 3).toFixed(0));
 
                 ordered[key] = result;
               }
