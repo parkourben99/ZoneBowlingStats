@@ -173,17 +173,39 @@
             return year ? this.years[year] : this.results;
           },
 
-          chartSeries(year = null){
+          getRandomColor() {
+            return '#'+Math.floor(Math.random()*16777215).toString(16);
+          },
+
+          chartSeries(year){
+            if(!year){
+              let results = {
+                labels: Object.keys(this.results),
+                datasets: []
+              };
+
+              for(let year of Object.keys(this.years)){
+                let result = this.chartSeries(year).datasets[0];
+                let paddingInData = 0;
+
+                if(results.datasets.length !== 0){
+                  paddingInData = results.datasets[results.datasets.length - 1].data.length;
+                  for(let i = 0; i < paddingInData; i++){
+                    result.data.unshift(0);
+                  }
+                }
+
+                results.datasets.push(result);
+              }
+
+              return results;
+            }
+
             let series = [];
             let labels = [];
 
             for(let games of Object.values(this.results)){
-              if(year){
-                if(games.date.year() === parseInt(year)){
-                  series.push(games.series);
-                  labels.push(games.date.format(this.dateFormat));
-                }
-              } else {
+              if(games.date.year() === parseInt(year)){
                 series.push(games.series);
                 labels.push(games.date.format(this.dateFormat));
               }
@@ -192,8 +214,8 @@
             return {
               labels,
               datasets: [{
-                label: year ? `Series for ${year}` : "All Series",
-                backgroundColor: '#ed7774',
+                label: `Series for ${year}`,
+                backgroundColor: this.getRandomColor(),
                 data: series
               }]
             };
