@@ -486,9 +486,10 @@
         methods: {
           getData() {
             let url = "http://home.ayles.com.au/api/bowling-results";
+            axios.defaults.crossDomain = true;
 
             axios.get(url).then((r) => {
-              this.results = r.data.results;
+              this.results = JSON.parse(r.data.results);
               this.loading = false;
 
             }).catch((error) => {
