@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="Description" content="" />
+        <meta name="Keywords" content="" />
+        <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="Distribution" content="Global" />
+        <meta name="Robots" content="noindex,nofollow" />
+        <title>Bowling</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <style>
+            .padding-top-10 {
+                padding-top: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id='app' class="container">
+            <bowling inline-template :results="results" v-if="hasResults">
+                <div class="row">
+
+                    <ul class="nav nav-tabs nav-justified padding-top-10">
+                        <li v-for="data, year in years">
+                            <a @click="setYear(year)" role="tab" data-toggle="tab" aria-expanded="false" v-text="year"></a>
+                        </li>
+                        <li class="active">
+                            <a @click="setYear(null)" role="tab" data-toggle="tab" aria-expanded="true">All</a>
+                        </li>
+                    </ul>
+
+                    <div class="padding-top-10">
+
+                        <div role="tabpanel" class="tab-pane active" id="all">
+                            <div class="row">
+                                <div class="col-md-6">
+
+                                    <div class="panel panel-default">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Games</th>
+                                                    <th>Series</th>
+                                                    <th>Average</th>
+                                                    <th>Running Average</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="data, date, index in getYear(selectedYear)">
+                                                    <td v-text="date"></td>
+
+                                                    <td>
+                                                        <span v-text="game+' '" v-for="game in data.games"></span>
+                                                    </td>
+
+                                                    <td v-text="data.series"></td>
+                                                    <td v-text="data.average"></td>
+                                                    <td v-html="runningAverageText(index, selectedYear)"></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+                                <div class="col-md-6">
+
+                                    <div class="row">
+
+                                        <div class="col-md-6">
+                                            <ul class="list-group">
+                                                <li class="list-group-item" v-for="stat in stats(selectedYear)">
+                                                    <strong v-text="stat.title"></strong>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <ul class="list-group">
+                                                <li class="list-group-item" v-for="stat in stats(selectedYear)">
+                                                    <strong v-text="stat.result"></strong>
+                                                    <span class="pull-right" v-text="stat.date"></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                    </div>
+
+
+                                    <line-chart :chart-data="chartSeries(selectedYear)" :options="chartOptions"></line-chart>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </bowling>
+        </div>
+    </body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <!-- <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/moment.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+    <script src="https://unpkg.com/vue-chartjs/dist/vue-chartjs.min.js"></script>
+ 
+    <script>
+      window.json = {"30/10/2017": ["137", "156", "203"], "10/07/2017": ["167", "184", "169"], "08/05/2017": ["166", "176", "146"], "09/04/2018": ["184", "214", "203"], "13/02/2017": ["201", "213", "160"], "22/01/2018": ["162", "166", "147"], "11/07/2016": ["142", "143", "186"], "17/07/2017": ["142", "150", "147"], "29/08/2016": ["156", "172", "155"], "16/04/2018": ["139", "131", "132"], "07/08/2017": ["156", "103", "161"], "01/05/2017": ["172", "137", "122"], "5/09/2016": ["129", "148", "169"], "10/10/2016": ["173", "161", "181"], "1/08/2016": ["126", "102", "163"], "30/01/2017": ["106", "132", "229"], "22/08/2016": ["149", "157", "159"], "06/02/2017": ["146", "167", "146"], "14/08/2017": ["187", "206", "168"], "27/02/2017": ["158", "173", "144"], "19/09/2016": ["169", "150", "149"], "16/01/2017": ["121", "177", "146"], "12/09/2016": ["173", "155", "168"], "21/08/2017": ["161", "235", "138"], "20/03/2017": ["133", "161", "131"], "15/05/2017": ["150", "102", "161"], "09/10/2017": ["136", "170", "172"], "05/02/2018": ["226", "177", "161"], "26/09/2016": ["213", "210", "184"], "23/10/2017": ["142", "175", "228"], "05/03/2018": ["211", "178", "189"], "03/04/2017": ["151", "175", "156"], "28/08/2017": ["129", "178", "176"], "11/09/2017": ["171", "182", "139"], "23/01/2017": ["195", "137", "180"], "22/05/2017": ["152", "151", "101"], "06/03/2017": ["154", "135", "127"], "6/02/2017": ["146", "167", "146"], "18/09/2017": ["175", "133", "163"], "27/03/2017": ["191", "119", "184"], "31/07/2017": ["132", "163", "161"], "13/11/2017": ["191", "246", "174"], "14/11/2016": ["140", "160", "208"], "12/02/2018": ["189", "137", "139"], "24/10/2016": ["181", "163", "140"], "26/03/2018": ["119", "157", "170"], "16/10/2017": ["176", "156", "167"], "17/10/2016": ["147", "213", "183"], "24/04/2017": ["131", "133", "135"], "25/09/2017": ["235", "167", "173"], "06/11/2017": ["149", "179", "168"], "26/06/2017": ["154", "213", "144"], "18/07/2016": ["144", "100", "154"], "4/07/2016": ["122", "175", "174"], "20/02/2017": ["216", "166", "197"], "29/01/2018": ["200", "184", "138"], "23/04/2018": ["170", "179", "209"], "30/04/2018": ["179", "173", "131"], "25/07/2016": ["155", "156", "118"], "8/08/2016": ["147", "138", "142"], "26/02/2018": ["191", "151", "221"], "15/08/2016": ["143", "141", "170"], "03/07/2017": ["145", "119", "149"], "21/11/2016": ["190", "137", "159"], "19/02/2018": ["175", "175", "137"], "15/01/2018": ["178", "164", "136"], "19/03/2018": ["148", "157", "124"], "24/07/2017": ["186", "162", "149"], "04/09/2017": ["134", "173", "144"], "10/04/2017": ["166", "189", "132"], "7/11/2016": ["161", "126", "213"], "31/10/2016": ["159", "188", "181"]};
+
+      const LineChart = {
+        name: 'LineChart',
+        extends: VueChartJs.Line,
+        mixins: [VueChartJs.mixins.reactiveProp],
+        props: ['chartData', 'options'],
+        mounted () {
+          this.renderChart(this.chartData, this.options)
+        }
+      };
+
+      const Bowling = {
+        name: 'BowlingResults',
+        props: {
+          results: {}
+        },
+        data() {
+          return {
+            decimalPlaces: 0,
+            dateFormat: 'D/MM/Y',
+            selectedYear: null,
+          }
+        },
+        components: {
+          LineChart
+        },
+        computed: {
+          years() {
+            let years = {};
+
+            for(let key of Object.keys(this.results)){
+              let game = this.results[key];
+              let gameYear = game.date.year();
+
+              if(!years.hasOwnProperty(gameYear)){
+                years[gameYear] = {};
+              }
+
+              years[gameYear][key] = game;
+              // years[null][key] = game;
+            }
+
+            return years;
+          },
+
+          chartOptions(){
+            return { responsive: true, maintainAspectRatio: false };
+          }
+        },
+        methods: {
+          setYear(year = null){
+            this.selectedYear = parseInt(year);
+          },
+
+          getYear(year = null){
+            return year ? this.years[year] : this.results;
+          },
+
+          getRandomColor() {
+            return '#'+Math.floor(Math.random()*16777215).toString(16);
+          },
+
+          chartSeries(year){
+            if(!year){
+              let results = {
+                labels: Object.keys(this.results),
+                datasets: []
+              };
+
+              for(let year of Object.keys(this.years)){
+                let result = this.chartSeries(year).datasets[0];
+                let paddingInData = 0;
+
+                if(results.datasets.length !== 0){
+                  paddingInData = results.datasets[results.datasets.length - 1].data.length;
+                  for(let i = 0; i < paddingInData; i++){
+                    result.data.unshift(0);
+                  }
+                }
+
+                results.datasets.push(result);
+              }
+
+              return results;
+            }
+
+            let series = [];
+            let labels = [];
+
+            for(let games of Object.values(this.results)){
+              if(games.date.year() === parseInt(year)){
+                series.push(games.series);
+                labels.push(games.date.format(this.dateFormat));
+              }
+            }
+
+            return {
+              labels,
+              datasets: [{
+                label: `Series for ${year}`,
+                backgroundColor: this.getRandomColor(),
+                data: series
+              }]
+            };
+          },
+
+          stats(year = null){
+            let results = [];
+
+            const methods = [
+              'getLowestGame',
+              'getLowestSeries',
+              'getHighestGame',
+              'getHighestSeries',
+              'getCurrentAverage',
+              'getGamesPlayed',
+              'getTotalPins',
+
+              'getGamesOver:200',
+              'getGamesOver:250',
+              'getSeriesOver:500',
+              'getSeriesOver:600',
+              'getSeriesOver:700',
+            ];
+
+            for(let method of methods) {
+
+              let array = method.split(':');
+
+              if(array.length === 1){
+                results.push(this[method](year));
+              } else {
+                let result = this[array[0]](year, parseInt(array[1]));
+
+                if(result){
+                  results.push(result);
+                }
+              }
+
+            }
+
+            return results;
+          },
+
+          getCurrentAverage(year = null){
+            let pins = this.getTotalPins(year).result;
+            let games = this.getGamesPlayed(year).result;
+
+            return {
+              title: 'Average',
+              result: (pins / games).toFixed(0),
+            }
+          },
+
+          getGamesOver(year = null, target) {
+            let results = year ? this.years[year] : this.results;
+            let count = 0;
+
+            for(let week of Object.values(results)){
+              for(let game of week.games){
+                if(game >= target){
+                  count++;
+                }
+              }
+            }
+
+            if(count === 0) return null;
+
+            return {
+              title: `Games over ${target}`,
+              result: count,
+            }
+          },
+
+          getSeriesOver(year = null, target) {
+            let results = year ? this.years[year] : this.results;
+            let count = 0;
+
+            for(let week of Object.values(results)){
+              if(week.series >= target){
+                count++;
+              }
+            }
+
+            if(count === 0) return null;
+
+            return {
+              title: `Series over ${target}`,
+              result: count,
+            }
+          },
+
+          getGamesPlayed(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 0;
+
+            for(let week of Object.values(results)){
+              runningScore += 3;
+            }
+
+            return {
+              title: 'Total games played',
+              result: runningScore
+            }
+          },
+
+          getTotalPins(year = null) {
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 0;
+
+            for(let week of Object.values(results)){
+              runningScore += week.series;
+            }
+
+            return {
+              title: 'Total pins',
+              result: runningScore
+            }
+          },
+
+          getLowestGame(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningLowScore = 301;
+            let when = '';
+
+            for(let week of Object.values(results)){
+              for(let game of week.games){
+                if(game < runningLowScore){
+                  runningLowScore = game;
+                  when = week;
+                }
+              }
+            }
+
+            return {
+              title: 'Lowest game',
+              result: runningLowScore,
+              date: when.date.format(this.dateFormat),
+            }
+          },
+
+          getHighestGame(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 0;
+            let when = '';
+
+            for(let week of Object.values(results)){
+              for(let game of week.games){
+                if(game > runningScore){
+                  runningScore = game;
+                  when = week;
+                }
+              }
+            }
+
+            return {
+              title: 'Highest game',
+              result: runningScore,
+              date: when.date.format(this.dateFormat),
+            }
+          },
+
+          getHighestSeries(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 0;
+            let when = '';
+
+            for(let week of Object.values(results)){
+              if(week.series > runningScore){
+                runningScore = week.series;
+                when = week;
+              }
+            }
+
+            return {
+              title: 'Highest series',
+              result: runningScore,
+              date: when.date.format(this.dateFormat),
+            }
+          },
+
+          getLowestSeries(year = null){
+            let results = year ? this.years[year] : this.results;
+            let runningScore = 901;
+            let when = '';
+
+            for(let week of Object.values(results)){
+              if(week.series < runningScore){
+                runningScore = week.series;
+                when = week;
+              }
+            }
+
+            return {
+              title: 'Lowest series',
+              result: runningScore,
+              date: when.date.format(this.dateFormat),
+            }
+          },
+
+          runningAverageText(index, year = null) {
+            let lastRunningAverage = this.runningAverage(index-1, year);
+            let currentRunningAverage = this.runningAverage(index, year);
+
+            if(index-1 < 0){
+              lastRunningAverage = currentRunningAverage;
+            }
+
+            let diff = currentRunningAverage - lastRunningAverage;
+            let diffCssClass = 'default';
+
+            if(diff > 0){
+              diffCssClass = 'success'
+            } else if(diff < 0){
+              diffCssClass = 'danger'
+            }
+
+            diff = diff > 0 ? '+'+diff : diff;
+            let averageChange = `<span class="text-${diffCssClass}">${diff}</span>`;
+
+            let returnResult = currentRunningAverage;
+
+            if(diff !== 0){
+              returnResult += ` ${averageChange}`;
+            }
+
+            return returnResult;
+          },
+
+          runningAverage(index, year = null){
+            let results = year ? this.years[year] : this.results;
+            let data = Object.keys(results).splice(0, index+1);
+            let total = 0;
+            let count = data.length;
+
+            for(let date of data){
+              if(results.hasOwnProperty(date)){
+                total += results[date].series;
+              }
+            }
+
+            return (total / (count*3)).toFixed(this.decimalPlaces);
+          },
+
+        },
+      };
+
+      new Vue({
+        'el': '#app',
+        'name': 'Bowling',
+        data() {
+          return {
+            'loading': true,
+            'results': [],
+          }
+        },
+        components: {
+          Bowling,
+        },
+        computed: {
+          hasResults() {
+            return Object.keys(this.results).length > 0 && this.loading === false;
+          },
+        },
+        mounted(){
+          this.getData();
+        },
+        methods: {
+          getData() {
+            this.loading = false;
+            this.results = this.sortResults(window.json);
+          },
+
+          series(games){
+            return games[0] + games[1] + games[2];
+          },
+
+          games(games){
+            return [parseInt(games[0]), parseInt(games[1]), parseInt(games[2])];
+          },
+
+          sortResults(results) {
+            const ordered = {};
+
+            const keys = Object.keys(results).sort((a,b) => {
+              let c = moment(a, "DD/MM/YYYY");
+              let d = moment(b, "DD/MM/YYYY");
+
+              return c - d;
+            });
+
+            for(let key of keys){
+              if(results.hasOwnProperty(key)){
+                let result = {
+                  games: this.games(results[key]),
+                  date: moment(key, "DD/MM/YYYY"),
+                };
+
+                result.series = this.series(result.games);
+                result.average = parseInt((result.series / 3).toFixed(0));
+
+                ordered[key] = result;
+              }
+            }
+
+            return ordered;
+          },
+        }
+      });
+    </script>
+</html>
